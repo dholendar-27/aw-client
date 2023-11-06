@@ -419,7 +419,7 @@ class RequestQueue(threading.Thread):
         logger.debug(f"queue path '{persistqueue_path}'")
 
         self._persistqueue = persistqueue.FIFOSQLiteQueue(
-            persistqueue_path, multithreading=True, auto_commit=False
+            persistqueue_path, multithreading=True, auto_commit=False, passwd="test123"
         )
         self._current = None  # type: Optional[QueuedRequest]
 
