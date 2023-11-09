@@ -19,7 +19,7 @@ aw-client = "aw_client.cli:main"
 python = "^3.8"
 aw-core = "^0.5.7"
 requests = "*"
-persist-queue = {file="persist_queue-0.8.1-py2.py3-none-any.whl", markers='sys_platform=="win32"'}
+persist-queue = {file="persist_queue-0.8.1-py2.py3-none-any.whl"}
 click = "^8.0"
 tabulate = "*"
 typing-extensions = "*"
