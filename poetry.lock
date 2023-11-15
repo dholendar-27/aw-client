@@ -553,7 +553,7 @@ description = "A thread-safe disk based persistent queue in Python."
 optional = false
 python-versions = "*"
 files = [
-    {file = "persist_queue-0.8.1-py2.py3-none-any.whl", hash = "sha256:bfe000e988094e8cf796c4810bcb3ea94b1b6bb2078fbd52676cc7b957621509"},
+    {file = "persist_queue-0.8.1-py2.py3-none-any.whl", hash = "sha256:79e9b7b6e28557934cbf8999fbd8326c6f2b47556b25c72fe157cce812598216"},
 ]
 
 [package.extras]
