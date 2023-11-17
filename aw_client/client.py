@@ -16,6 +16,8 @@ from typing import (
     Tuple,
     Union,
 )
+from aw_core.util import load_key
+import keyring
 
 import persistqueue
 import requests as req
@@ -443,6 +445,11 @@ class RequestQueue(threading.Thread):
 
     def _try_connect(self) -> bool:
         try:  # Try to connect
+            db_key = keyring.get_password("sdcdb", "sdcdb")
+            key = load_key("sdcu", "sdcu")
+            if not db_key or not key:
+                self.connected = False
+                return self.connected
             self._create_buckets()
             self.connected = True
             logger.info(
@@ -452,7 +459,7 @@ class RequestQueue(threading.Thread):
             )
         except req.RequestException:
             self.connected = False
-
+ 
         return self.connected
 
     def wait(self, seconds) -> bool:
