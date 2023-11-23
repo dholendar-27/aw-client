@@ -18,13 +18,12 @@ from typing import (
 )
 from aw_core.util import load_key
 import keyring
-
-import persistqueue
+from .persistqueue import SQLiteQueue
 import requests as req
 from aw_core.dirs import get_data_dir
 from aw_core.models import Event
 from aw_transform.heartbeats import heartbeat_merge
-
+from .persistqueue.exceptions import Empty
 from .config import load_config
 from .singleinstance import SingleInstance
 
@@ -420,8 +419,8 @@ class RequestQueue(threading.Thread):
 
         logger.debug(f"queue path '{persistqueue_path}'")
 
-        self._persistqueue = persistqueue.FIFOSQLiteQueue(
-            persistqueue_path, multithreading=True, auto_commit=False
+        self._persistqueue = SQLiteQueue(
+            persistqueue_path, multithreading=True, auto_commit=False, passwd = 'test123@'
         )
         self._current = None  # type: Optional[QueuedRequest]
 
@@ -431,7 +430,7 @@ class RequestQueue(threading.Thread):
         if not self._current:
             try:
                 self._current = self._persistqueue.get(block=False)
-            except persistqueue.exceptions.Empty:
+            except Empty:
                 return None
         return self._current
 
