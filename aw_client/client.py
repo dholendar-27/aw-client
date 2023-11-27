@@ -7,6 +7,7 @@ import threading
 from collections import namedtuple
 from datetime import datetime
 from time import sleep
+from aw_core.cache import *
 from typing import (
     Any,
     Callable,
@@ -30,7 +31,6 @@ from .singleinstance import SingleInstance
 # FIXME: This line is probably badly placed
 logging.getLogger("requests").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
-
 
 def _log_request_exception(e: req.RequestException):
     logger.warning(str(e))
@@ -444,9 +444,15 @@ class RequestQueue(threading.Thread):
 
     def _try_connect(self) -> bool:
         try:  # Try to connect
-            db_key = keyring.get_password("sdcdb", "sdcdb")
-            key = load_key("sdcu", "sdcu")
-            if not db_key or not key:
+            db_key = ""
+            cache_key = "current_user_credentials"
+            cached_credentials = cache_user_credentials(cache_key)
+            if cached_credentials != None:
+                db_key = cached_credentials.get("encrypted_db_key")
+            else:
+                db_key == None
+            key = load_key("user_key")
+            if db_key == None or key == None:
                 self.connected = False
                 return self.connected
             self._create_buckets()
