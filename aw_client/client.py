@@ -7,6 +7,7 @@ import threading
 from collections import namedtuple
 from datetime import datetime
 from time import sleep
+from aw_core.cache import *
 from typing import (
     Any,
     Callable,
@@ -61,12 +62,12 @@ def always_raise_for_request_errors(f: Callable[..., req.Response]):
 
 class ActivityWatchClient:
     def __init__(
-        self,
-        client_name: str = "unknown",
-        testing=False,
-        host=None,
-        port=None,
-        protocol="http",
+            self,
+            client_name: str = "unknown",
+            testing=False,
+            host=None,
+            port=None,
+            protocol="http",
     ) -> None:
         """
         A handy wrapper around the aw-server REST API. The recommended way of interacting with the server.
@@ -116,10 +117,10 @@ class ActivityWatchClient:
 
     @always_raise_for_request_errors
     def _post(
-        self,
-        endpoint: str,
-        data: Union[List[Any], Dict[str, Any]],
-        params: Optional[dict] = None,
+            self,
+            endpoint: str,
+            data: Union[List[Any], Dict[str, Any]],
+            params: Optional[dict] = None,
     ) -> req.Response:
         headers = {"Content-type": "application/json", "charset": "utf-8"}
         return req.post(
@@ -144,9 +145,9 @@ class ActivityWatchClient:
     #
 
     def get_event(
-        self,
-        bucket_id: str,
-        event_id: int,
+            self,
+            bucket_id: str,
+            event_id: int,
     ) -> Optional[Event]:
         endpoint = f"buckets/{bucket_id}/events/{event_id}"
         try:
@@ -159,11 +160,11 @@ class ActivityWatchClient:
                 raise
 
     def get_events(
-        self,
-        bucket_id: str,
-        limit: int = -1,
-        start: Optional[datetime] = None,
-        end: Optional[datetime] = None,
+            self,
+            bucket_id: str,
+            limit: int = -1,
+            start: Optional[datetime] = None,
+            end: Optional[datetime] = None,
     ) -> List[Event]:
         endpoint = f"buckets/{bucket_id}/events"
 
@@ -193,11 +194,11 @@ class ActivityWatchClient:
         self._delete(endpoint)
 
     def get_eventcount(
-        self,
-        bucket_id: str,
-        limit: int = -1,
-        start: Optional[datetime] = None,
-        end: Optional[datetime] = None,
+            self,
+            bucket_id: str,
+            limit: int = -1,
+            start: Optional[datetime] = None,
+            end: Optional[datetime] = None,
     ) -> int:
         endpoint = f"buckets/{bucket_id}/events/count"
 
@@ -211,12 +212,12 @@ class ActivityWatchClient:
         return int(response.text)
 
     def heartbeat(
-        self,
-        bucket_id: str,
-        event: Event,
-        pulsetime: float,
-        queued: bool = False,
-        commit_interval: Optional[float] = None,
+            self,
+            bucket_id: str,
+            event: Event,
+            pulsetime: float,
+            queued: bool = False,
+            commit_interval: Optional[float] = None,
     ) -> None:
         """
         Args:
@@ -304,11 +305,11 @@ class ActivityWatchClient:
     #
 
     def query(
-        self,
-        query: str,
-        timeperiods: List[Tuple[datetime, datetime]],
-        name: Optional[str] = None,
-        cache: bool = False,
+            self,
+            query: str,
+            timeperiods: List[Tuple[datetime, datetime]],
+            name: Optional[str] = None,
+            cache: bool = False,
     ) -> List[Any]:
         endpoint = "query/"
         params = {}  # type: Dict[str, Any]
@@ -420,7 +421,7 @@ class RequestQueue(threading.Thread):
         logger.debug(f"queue path '{persistqueue_path}'")
 
         self._persistqueue = SQLiteQueue(
-            persistqueue_path, multithreading=True, auto_commit=False, passwd = 'test123@'
+            persistqueue_path, multithreading=True, auto_commit=False, passwd='test123@'
         )
         self._current = None  # type: Optional[QueuedRequest]
 
@@ -444,9 +445,15 @@ class RequestQueue(threading.Thread):
 
     def _try_connect(self) -> bool:
         try:  # Try to connect
-            db_key = keyring.get_password("sdcdb", "sdcdb")
-            key = load_key("sdcu", "sdcu")
-            if not db_key or not key:
+            db_key = ""
+            cache_key = "current_user_credentials"
+            cached_credentials = cache_user_credentials(cache_key)
+            if cached_credentials != None:
+                db_key = cached_credentials.get("encrypted_db_key")
+            else:
+                db_key == None
+            key = load_key("user_key")
+            if db_key == None or key == None:
                 self.connected = False
                 return self.connected
             self._create_buckets()
@@ -458,7 +465,7 @@ class RequestQueue(threading.Thread):
             )
         except req.RequestException:
             self.connected = False
- 
+
         return self.connected
 
     def wait(self, seconds) -> bool:
