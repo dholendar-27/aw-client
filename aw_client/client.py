@@ -268,6 +268,17 @@ class ActivityWatchClient:
 
     def get_buckets(self) -> dict:
         return self._get("buckets/").json()
+    
+    def create_bucket_if_not_exist(self, bucket_id: str, event_type: str):
+        self.request_queue._reset()
+        endpoint = f"buckets/{bucket_id}"
+        data = {
+            "client": self.client_name,
+            "hostname": self.client_hostname,
+            "type": event_type,
+        }
+        self._post(endpoint, data)
+
 
     def create_bucket(self, bucket_id: str, event_type: str, queued=False):
         if queued:
@@ -424,6 +435,10 @@ class RequestQueue(threading.Thread):
             persistqueue_path, multithreading=True, auto_commit=False, passwd='test123@'
         )
         self._current = None  # type: Optional[QueuedRequest]
+
+    def _reset(self) -> None:
+        self._persistqueue.empty()
+        self._current = None
 
     def _get_next(self) -> Optional[QueuedRequest]:
         # self._current will always hold the next not-yet-sent event,

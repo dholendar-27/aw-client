@@ -15,8 +15,9 @@ elif sys.platform == "darwin":
     _parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(os.path.join(_module_dir, os.pardir))))
     libsqlcipher_path = _parent_dir
     print(libsqlcipher_path)
-    libsqlcipher = ctypes.cdll.LoadLibrary(libsqlcipher_path + '/libsqlcipher.0.dylib')
     openssl= ctypes.cdll.LoadLibrary(libsqlcipher_path + '/libcrypto.3.dylib')
+    libsqlcipher = ctypes.cdll.LoadLibrary(libsqlcipher_path + '/libsqlcipher.0.dylib')
+    
 
 from .exceptions import Empty
 from .serializers import pickle
