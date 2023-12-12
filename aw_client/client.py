@@ -268,7 +268,7 @@ class ActivityWatchClient:
 
     def get_buckets(self) -> dict:
         return self._get("buckets/").json()
-    
+
     def create_bucket_if_not_exist(self, bucket_id: str, event_type: str):
         self.request_queue._reset()
         endpoint = f"buckets/{bucket_id}"
@@ -420,11 +420,16 @@ class RequestQueue(threading.Thread):
         if not os.path.exists(queued_dir):
             os.makedirs(queued_dir)
 
+        cache_key = "current_user_credentials"
+        cached_credentials = cache_user_credentials(cache_key)
+        user_email = cached_credentials.get("email")
+
         persistqueue_path = os.path.join(
             queued_dir,
-            "{}{}.v{}.persistqueue".format(
+            "{}{}.{}.v{}.persistqueue".format(
                 self.client.client_name,
                 "-testing" if client.testing else "",
+                user_email,
                 self.VERSION,
             ),
         )
