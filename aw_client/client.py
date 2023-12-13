@@ -18,6 +18,7 @@ from typing import (
     Union,
 )
 from aw_core.util import load_key
+import jwt
 import keyring
 from .persistqueue import SQLiteQueue
 import requests as req
@@ -58,6 +59,16 @@ def always_raise_for_request_errors(f: Callable[..., req.Response]):
         return r
 
     return g
+
+def _generate_token():
+    print("inside _generate_token")
+    cache_key = "current_user_credentials"
+    cached_credentials = cache_user_credentials(cache_key)
+    user_key = cached_credentials.get("user_key")
+    if user_key:
+        return jwt.encode({"user": "watcher", "email": cached_credentials.get("email"),
+                                        "phone": cached_credentials.get("phone")}, user_key, algorithm="HS256")
+    else: return None
 
 
 class ActivityWatchClient:
@@ -113,7 +124,8 @@ class ActivityWatchClient:
 
     @always_raise_for_request_errors
     def _get(self, endpoint: str, params: Optional[dict] = None) -> req.Response:
-        return req.get(self._url(endpoint), params=params)
+        headers = {"Content-type": "application/json", "charset": "utf-8", "Authorization" : _generate_token()}
+        return req.get(self._url(endpoint), params=params, headers=headers)
 
     @always_raise_for_request_errors
     def _post(
@@ -122,7 +134,8 @@ class ActivityWatchClient:
             data: Union[List[Any], Dict[str, Any]],
             params: Optional[dict] = None,
     ) -> req.Response:
-        headers = {"Content-type": "application/json", "charset": "utf-8"}
+
+        headers = {"Content-type": "application/json", "charset": "utf-8", "Authorization" : _generate_token()}
         return req.post(
             self._url(endpoint),
             data=bytes(json.dumps(data), "utf8"),
@@ -132,13 +145,14 @@ class ActivityWatchClient:
 
     @always_raise_for_request_errors
     def _delete(self, endpoint: str, data: Any = dict()) -> req.Response:
-        headers = {"Content-type": "application/json"}
+        headers = {"Content-type": "application/json", "Authorization" : _generate_token()}
         return req.delete(self._url(endpoint), data=json.dumps(data), headers=headers)
 
     def get_info(self):
         """Returns a dict currently containing the keys 'hostname' and 'testing'."""
         endpoint = "info"
-        return self._get(endpoint).json()
+        headers = {"Content-type": "application/json", "charset": "utf-8", "Authorization" : _generate_token()}
+        return self._get(endpoint,headers=headers).json()
 
     #
     #   Event get/post requests
