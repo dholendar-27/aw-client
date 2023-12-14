@@ -61,7 +61,6 @@ def always_raise_for_request_errors(f: Callable[..., req.Response]):
     return g
 
 def _generate_token():
-    print("inside _generate_token")
     cache_key = "current_user_credentials"
     cached_credentials = cache_user_credentials(cache_key)
     user_key = cached_credentials.get("user_key")
