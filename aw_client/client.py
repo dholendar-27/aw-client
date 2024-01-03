@@ -61,13 +61,14 @@ def always_raise_for_request_errors(f: Callable[..., req.Response]):
     return g
 
 def _generate_token():
-    cache_key = "current_user_credentials"
-    cached_credentials = cache_user_credentials(cache_key)
-    user_key = cached_credentials.get("user_key")
-    if user_key:
-        return jwt.encode({"user": "watcher", "email": cached_credentials.get("email"),
-                                        "phone": cached_credentials.get("phone")}, user_key, algorithm="HS256")
-    else: return None
+    cache_key = "sundial"
+    cached_credentials = cache_user_credentials(cache_key,"SD_KEYS")
+    if cache_user_credentials:
+        user_key = cached_credentials.get("user_key")
+        if user_key:
+            return jwt.encode({"user": "watcher", "email": cached_credentials.get("email"),
+                                            "phone": cached_credentials.get("phone")}, user_key, algorithm="HS256")
+        else: return None
 
 
 class ActivityWatchClient:
@@ -433,26 +434,27 @@ class RequestQueue(threading.Thread):
         if not os.path.exists(queued_dir):
             os.makedirs(queued_dir)
 
-        cache_key = "current_user_credentials"
-        cached_credentials = cache_user_credentials(cache_key)
-        user_email = cached_credentials.get("email")
+        cache_key = "sundial"
+        cached_credentials = cache_user_credentials(cache_key,"SD_KEYS")
+        if cache_user_credentials:
+            user_email = cached_credentials.get("email")
 
-        persistqueue_path = os.path.join(
-            queued_dir,
-            "{}{}.{}.v{}.persistqueue".format(
-                self.client.client_name,
-                "-testing" if client.testing else "",
-                user_email,
-                self.VERSION,
-            ),
-        )
+            persistqueue_path = os.path.join(
+                queued_dir,
+                "{}{}.{}.v{}.persistqueue".format(
+                    self.client.client_name,
+                    "-testing" if client.testing else "",
+                    user_email,
+                    self.VERSION,
+                ),
+            )
 
-        logger.debug(f"queue path '{persistqueue_path}'")
+            logger.debug(f"queue path '{persistqueue_path}'")
 
-        self._persistqueue = SQLiteQueue(
-            persistqueue_path, multithreading=True, auto_commit=False, passwd='test123@'
-        )
-        self._current = None  # type: Optional[QueuedRequest]
+            self._persistqueue = SQLiteQueue(
+                persistqueue_path, multithreading=True, auto_commit=False, passwd='test123@'
+            )
+            self._current = None  # type: Optional[QueuedRequest]
 
     def _reset(self) -> None:
         self._persistqueue.empty()
@@ -479,8 +481,8 @@ class RequestQueue(threading.Thread):
     def _try_connect(self) -> bool:
         try:  # Try to connect
             db_key = ""
-            cache_key = "current_user_credentials"
-            cached_credentials = cache_user_credentials(cache_key)
+            cache_key = "sundial"
+            cached_credentials = cache_user_credentials(cache_key,"SD_KEYS")
             if cached_credentials != None:
                 db_key = cached_credentials.get("encrypted_db_key")
             else:

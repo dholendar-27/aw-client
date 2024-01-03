@@ -10,11 +10,9 @@ if sys.platform == "win32":
     _module_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.realpath(__file__)))))
     os.add_dll_directory(_module_dir)
 elif sys.platform == "darwin":
-    print(111111)
     _module_dir = os.path.dirname(os.path.realpath(__file__))
     _parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(os.path.join(_module_dir, os.pardir))))
     libsqlcipher_path = _parent_dir
-    print(libsqlcipher_path)
     openssl= ctypes.cdll.LoadLibrary(libsqlcipher_path + '/libcrypto.3.dylib')
     libsqlcipher = ctypes.cdll.LoadLibrary(libsqlcipher_path + '/libsqlcipher.0.dylib')
     
