@@ -63,7 +63,7 @@ def always_raise_for_request_errors(f: Callable[..., req.Response]):
 def _generate_token():
     cache_key = "sundial"
     cached_credentials = cache_user_credentials(cache_key,"SD_KEYS")
-    if cache_user_credentials:
+    if cached_credentials:
         user_key = cached_credentials.get("user_key")
         if user_key:
             return jwt.encode({"user": "watcher", "email": cached_credentials.get("email"),

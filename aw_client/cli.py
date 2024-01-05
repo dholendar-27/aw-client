@@ -46,7 +46,7 @@ class _Context:
 )
 @click.option(
     "--port",
-    default=5600,
+    default=7600,
     help="Port to use",
 )
 @click.option(

@@ -3,7 +3,7 @@ from aw_core.config import load_config_toml
 default_config = """
 [server]
 hostname = "127.0.0.1"
-port = "5600"
+port = "7600"
 
 [client]
 commit_interval = 10
