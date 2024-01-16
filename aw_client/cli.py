@@ -24,6 +24,13 @@ logger = logging.getLogger(__name__)
 
 
 def _valid_date(s):
+    """
+     Validate and return a datetime object. This is a helper function for argparse. ArgumentTypeError and argparse. ArgumentValueError
+     
+     @param s - string to be validated.
+     
+     @return datetime object of the validated date or None if the date is invalid ( no exception is raised ). >>> _valid_date ('1 Jan 1970
+    """
     # https://stackoverflow.com/questions/25470844/specify-format-for-input-arguments-argparse-python
     try:
         return datetime.strptime(s, "%Y-%m-%d")
@@ -58,6 +65,15 @@ class _Context:
 @click.option("--testing", is_flag=True, help="Set to use testing ports by default")
 @click.pass_context
 def main(ctx, testing: bool, verbose: bool, host: str, port: int):
+    """
+     Entry point for activity watch. This will connect to the host and port specified by the command line arguments.
+     
+     @param ctx - The argparse. Namespace object that contains all the necessary arguments
+     @param testing - If true the client will be used for testing
+     @param verbose - If true the client will
+     @param host
+     @param port
+    """
     ctx.obj = _Context()
     ctx.obj.client = aw_client.ActivityWatchClient(
         host=host,
@@ -73,6 +89,14 @@ def main(ctx, testing: bool, verbose: bool, host: str, port: int):
 @click.option("--pulsetime", default=60, help="pulsetime to use for merging heartbeats")
 @click.pass_obj
 def heartbeat(obj: _Context, bucket_id: str, data: str, pulsetime: int):
+    """
+     Sends a heartbeat to CloudFlare. This is a blocking call so it will block until the heartbeat is acknowledged
+     
+     @param obj - Context object for the connection
+     @param bucket_id - ID of the bucket to send to
+     @param data - JSON string of the heartbeat data to send to CloudFlare
+     @param pulsetime - Time in seconds to wait before
+    """
     now = datetime.now(timezone.utc)
     e = Event(duration=0, data=json.loads(data), timestamp=now)
     print(e)
@@ -82,8 +106,14 @@ def heartbeat(obj: _Context, bucket_id: str, data: str, pulsetime: int):
 @main.command(help="List all buckets")
 @click.pass_obj
 def buckets(obj: _Context):
+    """
+     Lists all buckets. Example :. from fabtools import buckets from fabtools. test import get_buckets
+     
+     @param obj - Instance of nova. v1. client.
+    """
     buckets = obj.client.get_buckets()
     print("Buckets:")
+    # Prints out the list of buckets
     for bucket in buckets:
         print(f" - {bucket}")
 
@@ -92,8 +122,15 @@ def buckets(obj: _Context):
 @click.argument("bucket_id")
 @click.pass_obj
 def events(obj: _Context, bucket_id: str):
+    """
+     Get events for a bucket. This is a list of events that have occurred since the last time you logged in and the time it took to complete that event.
+     
+     @param obj - An instance of novaclient. base. RequestContext
+     @param bucket_id - The id of the bucket to get events
+    """
     events = obj.client.get_events(bucket_id)
     print("events:")
+    # Print out the events in the event list.
     for e in events:
         print(
             " - {} ({}) {}".format(
@@ -113,6 +150,7 @@ def events(obj: _Context, bucket_id: str):
 @click.option("--stop", default=now + td1yr, type=click.DateTime())
 @click.pass_obj
 def query(
+    
     obj: _Context,
     path: str,
     cache: bool,
@@ -121,14 +159,28 @@ def query(
     stop: datetime,
     name: Optional[str] = None,
 ):
+    """
+     Query data from Google Drive. This is a wrapper around the : py : func : ` ~kombu. client. Client. query ` function with the addition of an optional name parameter.
+     
+     @param obj - The context to use for the request. It is passed by reference so you can access it from the context.
+     @param path - The path to the file to query. If this is a file the file will be read from the current directory and used as the query.
+     @param cache - Whether to use cache or not. Default is False.
+     @param _json - Whether to return JSON data instead of printing to stdout. Default is False.
+     @param start - The start time of the query in UTC.
+     @param stop - The stop time of the query in UTC.
+     @param name - The name of the query as it appears in the log
+    """
     with open(path) as f:
         query = f.read()
     result = obj.client.query(query, [(start, stop)], cache=cache, name=name)
+    # Print out the result of the API call.
     if _json:
         print(json.dumps(result))
     else:
+        # Print out the 10 out of the period.
         for period in result:
             print(f"Showing 10 out of {len(period)} events:")
+            # Print out the duration and data of each event
             for event in period[:10]:
                 event.pop("id")
                 event.pop("timestamp")
@@ -151,6 +203,7 @@ def query(
 @click.option("--stop", default=now + td1yr, type=click.DateTime())
 @click.pass_obj
 def report(
+    
     obj: _Context,
     hostname: str,
     cache: bool,
@@ -158,12 +211,24 @@ def report(
     stop: datetime,
     name: Optional[str] = None,
 ):
+    """
+     Query and report data between two dates. This is a wrapper around : py : func : ` ~plexapi. client. DesktopQuery ` and
+     
+     @param obj - The context to use for the query
+     @param hostname - The hostname to query
+     @param cache - Whether to cache the result
+     @param start - The start date to query from ( UTC )
+     @param stop - The stop date to query ( UTC ).
+     @param name - The name of the report to return ( optional
+    """
     logger.info(f"Querying between {start} and {stop}")
     bid_window = f"aw-watcher-window_{hostname}"
     bid_afk = f"aw-watcher-afk_{hostname}"
 
+    # Returns the current time zone.
     if not start.tzinfo:
         start = start.astimezone()
+    # Returns the current time zone.
     if not stop.tzinfo:
         stop = stop.astimezone()
 
@@ -188,6 +253,7 @@ def report(
     result = obj.client.query(query, [(start, stop)], cache=cache, name=name)
 
     # TODO: Print titles, apps, categories, with most time
+    # Print out the events in the result of the analysis.
     for period in result:
         print()
         # print(period["window"]["cat_events"])
@@ -210,10 +276,24 @@ def report(
 
 
 def _parse_events(events: List[dict]) -> List[Event]:
+    """
+     Parses event dictionaries into list of Event objects. This is a helper to be used by : py : meth : ` _parse_events `.
+     
+     @param events - List of events as dict. Example :.
+     
+     @return List of Event objects corresponding to the list of events passed in. Example :. >>> events = [ {'type':'test'' event_id':'3'}
+    """
     return [Event(**event) for event in events]
 
 
 def print_top(events: List[Event], key=lambda e: e.data, title="Events"):
+    """
+     Print the top 10 events in a tabulated format. This is useful for debugging the events that are most important to the user.
+     
+     @param events - The events to print. Must be sorted by duration
+     @param key - A function to extract the key from an event. Defaults to the value of the event. data attribute.
+     @param title - A title to print on the top of the
+    """
     print(
         title
         + (f" (showing 10 out of {len(events)} events)" if len(events) > 10 else "")
@@ -236,7 +316,7 @@ def print_top(events: List[Event], key=lambda e: e.data, title="Events"):
 @click.option("--start", default=now - td1day, type=click.DateTime())
 @click.option("--stop", default=now + td1yr, type=click.DateTime())
 @click.pass_obj
-def canonical(
+def canonical( 
     obj: _Context,
     hostname: str,
     cache: bool,
@@ -244,12 +324,24 @@ def canonical(
     stop: datetime,
     name: Optional[str] = None,
 ):
+    """
+     Query events between two dates. This is a convenience function for : func : ` ~plexapi. client. query `
+     
+     @param obj - The context to use for the query.
+     @param hostname - The hostname to query. Defaults to the currently logged in user
+     @param cache - Whether to cache the results in the cache directory.
+     @param start - The start time of
+     @param stop
+     @param name
+    """
     logger.info(f"Querying between {start} and {stop}")
     bid_window = f"aw-watcher-window_{hostname}"
     bid_afk = f"aw-watcher-afk_{hostname}"
 
+    # Returns the current time zone.
     if not start.tzinfo:
         start = start.astimezone()
+    # Returns the current time zone.
     if not stop.tzinfo:
         stop = stop.astimezone()
 
@@ -268,6 +360,7 @@ def canonical(
     result = obj.client.query(query, [(start, stop)], cache=cache, name=name)
 
     # TODO: Print titles, apps, categories, with most time
+    # Print out the last 10 out of the period.
     for period in result:
         print()
         events = _parse_events(period)
@@ -294,5 +387,6 @@ def canonical(
         )
 
 
+# main function for the main module
 if __name__ == "__main__":
     main()

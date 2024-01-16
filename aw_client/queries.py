@@ -20,6 +20,14 @@ class EnhancedJSONEncoder(json.JSONEncoder):
     """For encoding dataclasses into JSON"""
 
     def default(self, o):
+        """
+         Convert an object to a dictionary. This is a wrapper around the : meth : ` ~dataclasses. asdict ` method to allow dataclass objects to be converted to dictionaries
+         
+         @param o - The object to be converted
+         
+         @return The object converted to a dictionary or ` None ` if not a dataclass object ( for example a string
+        """
+        # Convert object to a dictionary of data classes.
         if dataclasses.is_dataclass(o):
             return dataclasses.asdict(o)
         return super().default(o)
@@ -67,14 +75,35 @@ class AndroidQueryParams(QueryParams, _AndroidQueryParamsBase):
 
 
 def isDesktopParams(params: QueryParams) -> TypeGuard[DesktopQueryParams]:
+    """
+     Check if a query params is a DesktopQueryParams. This is used to ensure that we don't accidentally send a query that is sent to a user in an unauthenticated context.
+     
+     @param params - The query params to check. May be None.
+     
+     @return True if params is a DesktopQueryParams False otherwise. >>> from pytest. fixture import get >>> type = get () Traceback ( most recent call last ) : NoSuchObject
+    """
     return isinstance(params, DesktopQueryParams)
 
 
 def isAndroidParams(params: QueryParams) -> TypeGuard[AndroidQueryParams]:
+    """
+     Check if query params is AndroidQueryParams. This is a type guard to avoid type clashes with other types that inherit from AndroidQueryParams
+     
+     @param params - The query params to check
+     
+     @return True if params is an instance of AndroidQueryParams False otherwise ( for example if params is None or not a subclass
+    """
     return isinstance(params, AndroidQueryParams)
 
 
 def canonicalEvents(params: Union[DesktopQueryParams, AndroidQueryParams]) -> str:
+    """
+     Generate code to fetch events and / or filter by class. This is used by : func : ` get_events ` and : func : ` get_events_and_filter `
+     
+     @param params - query parameters for events.
+     
+     @return code to fetch events and / or filter by class ( s ) as a string. The code can be run in a shell
+    """
     # Needs escaping for regex patterns like '\w' to work (JSON.stringify adds extra unnecessary escaping)
     classes_str = json.dumps(params.classes, cls=EnhancedJSONEncoder)
     classes_str = re.sub(r"\\\\", r"\\", classes_str)
@@ -134,17 +163,41 @@ def canonicalEvents(params: Union[DesktopQueryParams, AndroidQueryParams]) -> st
 
 
 def pretty_query(query: str) -> str:
+    """
+     Formats query for display. This is used to make queries human readable. The query is split on newlines and each line is separated by a newline.
+     
+     @param query - The query to format. Must be a string of one or more lines.
+     
+     @return The query formatted as a string of one or more lines. If there are no lines in the query it is returned as is
+    """
     return "\n".join([line.strip() for line in query.split("\n") if line.strip()])
 
 
 def _browser_in_buckets(browser: str, browserbuckets: List[str]) -> Optional[str]:
+    """
+     Check if browser is in one of the buckets. This is used to detect browser's presence in a list of buckets
+     
+     @param browser - the browser we want to check
+     @param browserbuckets - the list of buckets to check against.
+     
+     @return the bucket that browser belongs to or None if it isn't in one of the buckets ( in which case browser is returned
+    """
+    # Return the bucket that is in browserbuckets.
     for bucket in browserbuckets:
+        # Return the bucket if it s in the bucket.
         if browser in bucket:
             return bucket
     return None
 
 
 def browsersWithBuckets(browserbuckets: List[str]) -> List[Tuple[str, str]]:
+    """
+     Returns a list of browser names and bucket IDs that are in the list of buckets. This is useful for checking if a user has access to an app that's listed in a bucket and which bucket they want to use.
+     
+     @param browserbuckets - A list of buckets to look for.
+     
+     @return A list of ( browserName bucketId ) pairs for which a bucket could be found or None if no browser was
+    """
     """Returns a list of (browserName, bucketId) pairs for found browser buckets"""
     browsername_to_bucketid: List[Tuple[str, Optional[str]]] = [
         (browserName, _browser_in_buckets(browserName, browserbuckets))
@@ -156,9 +209,17 @@ def browsersWithBuckets(browserbuckets: List[str]) -> List[Tuple[str, str]]:
 
 
 def browserEvents(params: DesktopQueryParams) -> str:
+    """
+     Returns a list of events that were made by each browser. It is possible to have multiple browsers in one call to this function
+     
+     @param params - Desktop query parameters ( bid_browsers bid_browsers )
+     
+     @return String of JavaScript code to run in browser events ( ordered by timestamp ) in chronological order ( oldest to newest
+    """
     """Returns a list of active browser events (where the browser was the active window) from all browser buckets"""
     code = "browser_events = [];"
 
+    # Generates code for the events.
     for browserName, bucketId in browsersWithBuckets(params.bid_browsers):
         browser_appnames_str = json.dumps(browser_appnames[browserName])
         code += f"""
@@ -214,16 +275,38 @@ default_limit = 100
 
 
 def querystr_to_array(querystr: str) -> List[str]:
+    """
+     Convert query string to list of strings. This is used to create a list of strings from a query string
+     
+     @param querystr - query string to convert to list
+     
+     @return list of strings in query string separated by space ( s ) e. g. " a b c
+    """
     return [line + ";" for line in querystr.split(";") if line]
 
 
 def escape_doublequote(s: str) -> str:
+    """
+     Escape double quotes in a string. This is useful for quoting strings that are meant to be used as part of a query such as SELECT or EXPLAIN.
+     
+     @param s - The string to escape. It is assumed that the string is quoted before it is passed to this function.
+     
+     @return The string with double quotes escaped as necessary. >>> escape_doublequote ('SELECT')'SELECT
+    """
     return re.sub('/"/g', '\\"', s)
 
 
 def fullDesktopQuery(
+    
     params: DesktopQueryParams,
 ) -> str:
+    """
+     Generate a URL to query desktop. This is used for the URL generation and also for the Google Apps API
+     
+     @param params - Desktop query parameters to use
+     
+     @return URL to query desktop with query parameters ( URL + browser events ) and Google Apps API ( browser events
+    """
     # Escape `"`
     params.bid_window = escape_doublequote(params.bid_window)
     params.bid_afk = escape_doublequote(params.bid_afk)
@@ -270,6 +353,9 @@ def fullDesktopQuery(
 
 
 def test_fullDesktopQuery():
+    """
+     Test full desktop query with time period. We're using this to test the event watcher and not the window
+    """
     params = DesktopQueryParams(
         bid_window="aw-watcher-window_",
         bid_afk="aw-watcher-afk_",
@@ -286,5 +372,6 @@ def test_fullDesktopQuery():
     print(len(events))
 
 
+# This is a test_fullDesktopQuery function.
 if __name__ == "__main__":
     test_fullDesktopQuery()
