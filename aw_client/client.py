@@ -87,12 +87,12 @@ def always_raise_for_request_errors(f: Callable[..., req.Response]):
 
 def _generate_token():
     """
-     Generate a token to be used for authenticating with Sundial. This is a wrapper around jwt. encode which returns a JSON Web Token instead of a string.
+     Generate a token to be used for authenticating with TTim. This is a wrapper around jwt. encode which returns a JSON Web Token instead of a string.
      
      
      @return JWT or None if there is no token to be
     """
-    cache_key = "sundial"
+    cache_key = "TTim"
     cached_credentials = cache_user_credentials(cache_key,"SD_KEYS")
     # Returns a JWT encoded string with the cached credentials.
     if cached_credentials:
@@ -666,7 +666,7 @@ class RequestQueue(threading.Thread):
         if not os.path.exists(queued_dir):
             os.makedirs(queued_dir)
 
-        cache_key = "sundial"
+        cache_key = "TTim"
         cached_credentials = cache_user_credentials(cache_key,"SD_KEYS")
         # If cache_user_credentials is set to True the user credentials are cached and stored in the cache file.
         if cache_user_credentials:
@@ -746,7 +746,7 @@ class RequestQueue(threading.Thread):
         """
         try:  # Try to connect
             db_key = ""
-            cache_key = "sundial"
+            cache_key = "TTim"
             cached_credentials = cache_user_credentials(cache_key,"SD_KEYS")
             # Returns the encrypted db_key if the cached credentials are cached.
             if cached_credentials != None:
