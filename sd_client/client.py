@@ -92,7 +92,6 @@ def _generate_token():
      
      @return JWT or None if there is no token to be
     """
-    cache_key = "Sundial"
     cached_credentials = cache_user_credentials("SD_KEYS")
     # Returns a JWT encoded string with the cached credentials.
     if cached_credentials:
@@ -665,11 +664,10 @@ class RequestQueue(threading.Thread):
         # Create a directory if it doesn t exist.
         if not os.path.exists(queued_dir):
             os.makedirs(queued_dir)
-
-        cache_key = "Sundial"
         cached_credentials = cache_user_credentials("SD_KEYS")
         # If cache_user_credentials is set to True the user credentials are cached and stored in the cache file.
         if cache_user_credentials:
+            print(cached_credentials)
             user_email = cached_credentials.get("email")
 
             persistqueue_path = os.path.join(
@@ -746,7 +744,6 @@ class RequestQueue(threading.Thread):
         """
         try:  # Try to connect
             db_key = ""
-            cache_key = "Sundial"
             cached_credentials = cache_user_credentials("SD_KEYS")
             # Returns the encrypted db_key if the cached credentials are cached.
             if cached_credentials != None:
